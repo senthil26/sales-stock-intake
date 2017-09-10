@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/sales-stock-intake.iml" filepath="$PROJECT_DIR$/sales-stock-intake.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ssi-tech-core/ssi-tech-core.iml" filepath="$PROJECT_DIR$/ssi-tech-core/ssi-tech-core.iml" />
+    </modules>
+  </component>
+</project>
