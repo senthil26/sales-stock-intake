@@ -10,6 +10,7 @@
 
     <modules>
         <module>ssi-tech-core</module>
+        <module>ssi-initial-planning</module>
     </modules>
 
 </project>
