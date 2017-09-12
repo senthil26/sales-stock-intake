@@ -1,9 +1,7 @@
 package com.mns.ssi.initial.planning.service.impl;
 
-import com.mns.ssi.initial.planning.entity.Criteria;
-import com.mns.ssi.initial.planning.entity.Node;
-import com.mns.ssi.initial.planning.entity.Level;
-import com.mns.ssi.initial.planning.entity.Product;
+import com.mns.ssi.initial.planning.exception.ProductDefaultsServiceException;
+import com.mns.ssi.initial.planning.model.*;
 import com.mns.ssi.initial.planning.exception.ProductsServiceException;
 import com.mns.ssi.initial.planning.service.ProductDetailsService;
 import com.mns.ssi.initial.planning.service.ProductHierarchyService;
@@ -12,84 +10,82 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.stream.Collectors;
 
-import static com.mns.ssi.initial.planning.entity.Product.Attribute.*;
+import static com.mns.ssi.initial.planning.model.Criteria.Attribute.*;
 import static java.util.Collections.emptyList;
 
 @Service
 public class ProductsServiceImpl implements ProductsService {
-    private static final String DASH = "-";
-    private static final String EMPTY = "";
-    private static final String SLASH = "/";
-
     private final ProductHierarchyService<String> productHierarchyService;
     private final ProductDetailsService productDetailsService;
 
     @Autowired
     public ProductsServiceImpl(ProductHierarchyService<String> productHierarchyService,
-                                   ProductDetailsService productDetailsService) {
+                               ProductDetailsService productDetailsService) {
         this.productHierarchyService = productHierarchyService;
         this.productDetailsService = productDetailsService;
     }
 
     @Override
-    public List<Product> getProducts(Criteria criteria) {
-        List<String> hierarchyIds = criteria.getFilter(HIERARCHY_ID);
+    public List<Product> getProductsBySeason(List<String> hierarchyIds,
+                                             List<String> seasons,
+                                             int pageIndex,
+                                             int pageSize) {
         if (hierarchyIds.isEmpty()) {
-            throw new ProductsServiceException("Cannot find Products based on an empty Node Ids");
+            throw new ProductsServiceException("Cannot find Products based on an empty hierarchy ids");
         }
 
-        final Set<Node> nodes =
-                productHierarchyService.getHierarchy(hierarchyIds);
-
-        final Set<String> itemIds = nodes.stream()
-                .filter(n -> n.getLevelId() == Level.ITEM)
-                .map(n -> n.getId())
-                .collect(Collectors.toSet());
-
-        List<String> superSeasons = criteria.getFilter(SUPER_SEASON);
-        if (superSeasons == null) {
-            superSeasons = emptyList();
+        if (seasons.isEmpty()) {
+            throw new ProductsServiceException("Cannot find Products based on an empty seasons");
         }
 
-        Criteria coreCriteria = Criteria.builder()
-                .filter(HIERARCHY_ID, new ArrayList<>(itemIds))
-                .filter(SUPER_SEASON, superSeasons)
-                .build();
-
-        List<Product> products = productDetailsService.getProducts(coreCriteria);
-        products.stream()
-                .forEach(product -> {
-                        String department = getDepartment(product.getAttribute(HIERARCHY_ID));
-                        String lineDescriptionWithColor = lineDescription(department, product);
-                        product.setAttribute(LINE_DESCRIPTION, lineDescriptionWithColor);
-                    });
-
-        return products;
+        return findProducts(hierarchyIds, seasons, pageIndex, pageSize);
     }
 
-    private String getDepartment(String hierarchyId) {
-        StringTokenizer tokenizer = new StringTokenizer(hierarchyId, DASH);
-        if(tokenizer.hasMoreTokens()) {
-            return tokenizer.nextToken();
-        }
-
-        return EMPTY;
+    @Override
+    public List<Product> getProductsById(List<String> hierarchyIds, int pageIndex, int pageSize) {
+        return findProducts(hierarchyIds, emptyList(), pageIndex, pageSize);
     }
 
+    private List<Product> findProducts(List<String> hierarchyIds, List<String> seasons,
+                                       int pageIndex, int pageSize) {
+        try {
+            ProductHierarchy productHierarchy =
+                    productHierarchyService.getHierarchy(hierarchyIds);
 
-    private String lineDescription(String department, Product product) {
-        StringBuilder builder = new StringBuilder();
-        builder.append(department);
-        builder.append(SLASH);
-        builder.append(product.getAttribute(STROKE_NUMBER)).append(SLASH);
-        builder.append(product.getAttribute(LONG_DESCRIPTION)).append(SLASH);
-        builder.append((product.getColour() == null) ? EMPTY : product.getColour().toString());
+            Set<HierarchyNode> itemHierarchyNodes = ProductHierarchy.find(productHierarchy.getNodes(), Level.ITEM);
 
-        return builder.toString();
+            Set<String> itemIds = itemHierarchyNodes.stream()
+                    .map(hierarchyNode -> hierarchyNode.getId())
+                    .collect(Collectors.toSet());
+
+            Criteria productCriteria = Criteria.builder()
+                    .filter(HIERARCHY_ID, new ArrayList<>(itemIds))
+                    .filter(SUPER_SEASON, seasons)
+                    .pageIndex(pageIndex)
+                    .pageSize(pageSize)
+                    .build();
+
+            List<ProductDetail> productDetails = productDetailsService.getProducts(productCriteria);
+            List<Product> products = productDetails.stream()
+                    .map(productDetail -> Product.builder()
+                            .hierarchyId(productDetail.getHierarchyId())
+                            .articleNumber(productDetail.getArticleNumber())
+                            .lineDescription(productDetail.getHierarchyId(),
+                                    productDetail.getStrokeNumber(),
+                                    productDetail.getLongDescription(),
+                                    productDetail.getColour())
+                            .build())
+                    .collect(Collectors.toList());
+
+            return products;
+        } catch(Exception anyError) {
+            throw new ProductDefaultsServiceException("Error while retrieving products", anyError);
+        }
+
     }
 }

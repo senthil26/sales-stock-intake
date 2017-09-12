@@ -1,9 +1,9 @@
 package com.mns.ssi.initial.planning.controller.dto;
 
-public class HierarchyError {
+public class Error {
     private String message;
 
-    public HierarchyError(String message) {
+    public Error(String message) {
         this.message = message;
     }
 

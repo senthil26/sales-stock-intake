@@ -1,4 +1,4 @@
-package com.mns.ssi.initial.planning.entity;
+package com.mns.ssi.initial.planning.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ComparisonChain;
@@ -8,23 +8,20 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-import java.util.Collections;
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-public class Node implements Comparable<Node> {
-    private static final int DEEPEST_DEPTH = 6;
-
-    private final String id;
-    private final String value;
-    private final Level levelId;
-    private final Set<Node> children;
+public class HierarchyNode implements Comparable<HierarchyNode>, Serializable {
+    private String id;
+    private String value;
+    private Level levelId;
+    private Set<HierarchyNode> children;
 
     @JsonIgnore
-    private Node parent;
+    private HierarchyNode parent;
 
-    private Node(Builder builder) {
+    private HierarchyNode(Builder builder) {
         this.id = builder.id;
         this.value = builder.value;
         this.levelId = builder.levelId;
@@ -32,12 +29,14 @@ public class Node implements Comparable<Node> {
         this.parent = builder.parent;
     }
 
+    HierarchyNode() {}
+
     public static class Builder {
         private String id;
         private String value;
         private Level levelId;
-        private Node parent;
-        private Set<Node> children;
+        private HierarchyNode parent;
+        private Set<HierarchyNode> children;
 
         Builder() {
             children = new HashSet<>();
@@ -58,12 +57,12 @@ public class Node implements Comparable<Node> {
             return this;
         }
 
-        public Builder parent(Node parent) {
+        public Builder parent(HierarchyNode parent) {
             this.parent = parent;
             return this;
         }
 
-        public Builder child(Node child) {
+        public Builder child(HierarchyNode child) {
             if(child != null) {
                 this.children.add(child);
             }
@@ -71,8 +70,8 @@ public class Node implements Comparable<Node> {
             return this;
         }
 
-        public Node build() {
-            return new Node(this);
+        public HierarchyNode build() {
+            return new HierarchyNode(this);
         }
     }
 
@@ -80,6 +79,9 @@ public class Node implements Comparable<Node> {
         return new Builder();
     }
 
+    public boolean hasChildren() {
+        return children.size() > 0;
+    }
     public String getId() {
         return id;
     }
@@ -92,11 +94,11 @@ public class Node implements Comparable<Node> {
         return levelId;
     }
 
-    public Set<Node> getChildren() {
+    public Set<HierarchyNode> getChildren() {
         return new HashSet<>(children);
     }
 
-    public Node getParent() {
+    public HierarchyNode getParent() {
         return parent;
     }
 
@@ -106,11 +108,11 @@ public class Node implements Comparable<Node> {
             return true;
         }
 
-        if (!(o instanceof Node)) {
+        if (!(o instanceof HierarchyNode)) {
             return false;
         }
 
-        Node other = (Node) o;
+        HierarchyNode other = (HierarchyNode) o;
         return new EqualsBuilder()
                 .append(other.getId(), this.getId())
                 .build();
@@ -130,7 +132,7 @@ public class Node implements Comparable<Node> {
 
 
     @Override
-    public int compareTo(Node other) {
+    public int compareTo(HierarchyNode other) {
         return ComparisonChain.start()
                 .compare(this.levelId, other.levelId, Ordering.natural().nullsLast())
                 .compare(this.id, other.id)

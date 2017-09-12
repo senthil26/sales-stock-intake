@@ -1,4 +1,4 @@
-package com.mns.ssi.initial.planning.entity;
+package com.mns.ssi.initial.planning.model;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 

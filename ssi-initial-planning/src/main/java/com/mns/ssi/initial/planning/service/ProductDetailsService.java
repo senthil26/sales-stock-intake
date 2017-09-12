@@ -1,10 +1,10 @@
 package com.mns.ssi.initial.planning.service;
 
-import com.mns.ssi.initial.planning.entity.Criteria;
-import com.mns.ssi.initial.planning.entity.Product;
+import com.mns.ssi.initial.planning.model.Criteria;
+import com.mns.ssi.initial.planning.model.ProductDetail;
 
 import java.util.List;
 
 public interface ProductDetailsService {
-    List<Product> getProducts(Criteria criteria);
+    List<ProductDetail> getProducts(Criteria criteria);
 }

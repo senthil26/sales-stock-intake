@@ -1,18 +1,17 @@
 package com.mns.ssi.initial.planning.controller;
 
-import com.mns.ssi.initial.planning.controller.dto.HierarchyError;
-import com.mns.ssi.initial.planning.controller.dto.ProductHierarchyIds;
-import com.mns.ssi.initial.planning.entity.Level;
-import com.mns.ssi.initial.planning.entity.Node;
+import com.mns.ssi.initial.planning.controller.dto.Error;
+import com.mns.ssi.initial.planning.controller.dto.HierarchyIdsAndLevel;
+import com.mns.ssi.initial.planning.model.Level;
 import com.mns.ssi.initial.planning.exception.ProductHierarchyNotFoundException;
 import com.mns.ssi.initial.planning.exception.ProductHierarchyServiceException;
+import com.mns.ssi.initial.planning.model.ProductHierarchy;
 import com.mns.ssi.initial.planning.service.ProductHierarchyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.Set;
 
 @CrossOrigin(origins = "*")
 @RestController
@@ -27,27 +26,27 @@ public class ProductHierarchyController {
     }
 
     @RequestMapping(value = "/{id}/children/{depth}", method = RequestMethod.GET)
-    public Set<Node> childrenHierarchy(@PathVariable String id, @PathVariable String depth) {
+    public ProductHierarchy childrenHierarchy(@PathVariable String id, @PathVariable String depth) {
         return productHierarchyService.getChildrenHierarchy(id, Integer.valueOf(depth));
     }
 
     @RequestMapping(value = "/parent", method = RequestMethod.POST)
-    public Set<Node> parentHierarchy(@RequestBody ProductHierarchyIds productHierarchyIds) {
-        Level level = Level.from(productHierarchyIds.getLevelId());
-        return productHierarchyService.getParentHierarchy(productHierarchyIds.getHierarchyIds(), level);
+    public ProductHierarchy parentHierarchy(@RequestBody HierarchyIdsAndLevel hierarchyIdsAndLevel) {
+        Level level = Level.from(hierarchyIdsAndLevel.getLevelId());
+        return productHierarchyService.getParentHierarchy(hierarchyIdsAndLevel.getHierarchyIds(), level);
     }
 
     @ExceptionHandler(ProductHierarchyServiceException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public HierarchyError hierarchyError(ProductHierarchyServiceException hierarchyError)
+    public Error hierarchyError(ProductHierarchyServiceException hierarchyError)
             throws IOException {
-        return new HierarchyError(hierarchyError.getMessage());
+        return new Error(hierarchyError.getMessage());
     }
 
     @ExceptionHandler(ProductHierarchyNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public HierarchyError hierarchyNotFoundError(ProductHierarchyNotFoundException hierarchyNotFound)
+    public Error hierarchyNotFoundError(ProductHierarchyNotFoundException hierarchyNotFound)
             throws IOException {
-        return new HierarchyError(hierarchyNotFound.getMessage());
+        return new Error(hierarchyNotFound.getMessage());
     }
 }

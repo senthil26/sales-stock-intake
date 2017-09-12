@@ -82,8 +82,8 @@ public interface SSICoreBaseDao {
 	 * @param filedValues
 	 * @return
 	 */
-	<T extends SSIBaseEntity> List<T> findByFields(final Class<T> entityClass, final String searchField,
-                                                   final List<Object> filedValues, boolean isNegative);
+	<T extends SSIBaseEntity, I> List<T> findByFields(final Class<T> entityClass, final String searchField,
+                                                   final List<I> filedValues, boolean isNegative);
 
 	/**
 	 * 

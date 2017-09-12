@@ -110,19 +110,19 @@ public abstract class SSIBaseEntity implements Serializable {
 	}*/
 
 	/**
-	 * Gets the entity id.
+	 * Gets the model id.
 	 * 
-	 * @return the entity id
+	 * @return the model id
 	 */
 	public Long getEntityId() {
 		return entityId;
 	}
 
 	/**
-	 * Sets the entity id.
+	 * Sets the model id.
 	 * 
 	 * @param entityId
-	 *            the new entity id
+	 *            the new model id
 	 */
 	public void setEntityId(Long entityId) {
 		this.entityId = entityId;

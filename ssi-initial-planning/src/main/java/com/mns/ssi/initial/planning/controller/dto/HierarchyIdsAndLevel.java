@@ -7,12 +7,12 @@ import java.util.List;
 
 import static org.apache.commons.lang3.builder.ToStringBuilder.reflectionToString;
 
-public class ProductHierarchyIds {
+public class HierarchyIdsAndLevel {
     private static final String DEPARTMENT_LEVEL = "3";
     private List<String> hierarchyIds;
     private String levelId;
 
-    public ProductHierarchyIds() {
+    public HierarchyIdsAndLevel() {
         this.hierarchyIds = new ArrayList<>();
         this.levelId = DEPARTMENT_LEVEL;
     }

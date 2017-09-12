@@ -31,8 +31,8 @@ public interface SSIRelationalCoreBaseService {
 
 	<T extends SSIBaseEntity> T findById(final Class<T> entityClass, final Long recordId);
 
-	<T extends SSIBaseEntity> List<T> findFieldIds(final Class<T> entityClass, final String searchField,
-                                                   final List<Object> filedValues, boolean isNegative);
+	<T extends SSIBaseEntity, I> List<T> findFieldIds(final Class<T> entityClass, final String searchField,
+                                                   final List<I> filedValues, boolean isNegative);
 
 	void loadFile(OutputStream os, Long recordID);
 

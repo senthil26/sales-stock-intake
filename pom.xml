@@ -11,7 +11,6 @@
     <modules>
         <module>ssi-tech-core</module>
         <module>ssi-initial-planning</module>
-        <module>ssi-enterprise-adapters</module>
     </modules>
 
 </project>

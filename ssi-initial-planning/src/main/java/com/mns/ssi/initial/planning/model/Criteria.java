@@ -1,5 +1,6 @@
-package com.mns.ssi.initial.planning.entity;
+package com.mns.ssi.initial.planning.model;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.util.*;
@@ -10,7 +11,7 @@ import static org.apache.commons.lang3.builder.HashCodeBuilder.reflectionHashCod
 import static org.apache.commons.lang3.builder.ToStringBuilder.reflectionToString;
 
 public final class Criteria {
-    private final Map<Product.Attribute, Set<String>> filters;
+    private final Map<Criteria.Attribute, Set<String>> filters;
     private final int pageSize;
     private final int pageIndex;
 
@@ -21,7 +22,7 @@ public final class Criteria {
     }
 
     public static class Builder {
-        private Map<Product.Attribute, Set<String>> filters;
+        private Map<Criteria.Attribute, Set<String>> filters;
         private int pageSize;
         private int pageIndex;
 
@@ -29,7 +30,7 @@ public final class Criteria {
             this.filters = new HashMap<>();
         }
 
-        public Builder filter(Product.Attribute name, String value) {
+        public Builder filter(Criteria.Attribute name, String value) {
             if(value == null) {
                 return this;
             }
@@ -39,7 +40,7 @@ public final class Criteria {
             return this;
         }
 
-        public Builder filter(Product.Attribute name, List<String> values) {
+        public Builder filter(Criteria.Attribute name, List<String> values) {
             filters.computeIfAbsent(name, n -> new HashSet<>());
             filters.get(name).addAll(values);
             return this;
@@ -60,11 +61,44 @@ public final class Criteria {
         }
     }
 
+    public enum Attribute {
+        ARTICLE_NUMBER("articleNumber"),
+        LONG_DESCRIPTION("longDescription"),
+        LINE_DESCRIPTION("lineDescription"),
+        STROKE_NUMBER("strokeNumber"),
+        SUPER_SEASON("superSeason"),
+        HIERARCHY_ID("hierarchyId");
+
+        private static final Map<String, Attribute> attributes = new HashMap<>();
+
+        static {
+            Arrays.stream(values()).forEach(attribute -> attributes.put(attribute.name, attribute));
+        }
+
+        private String name;
+
+        Attribute(String name) {
+            this.name = name;
+        }
+
+        @JsonValue
+        @Override
+        public String toString() {
+            return name;
+        }
+
+        public static Attribute from(String name) {
+            return attributes.get(name);
+        }
+
+    }
+
+
     public static Builder builder() {
         return new Builder();
     }
 
-    public List<String> getFilter(Product.Attribute attribute) {
+    public List<String> getFilter(Criteria.Attribute attribute) {
         return filters.getOrDefault(attribute, Collections.emptySet()).stream()
                 .collect(Collectors.toList());
     }

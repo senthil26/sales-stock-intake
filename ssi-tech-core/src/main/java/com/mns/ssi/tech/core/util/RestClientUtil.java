@@ -15,6 +15,7 @@ import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.ClientResponse.Status;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.core.util.Base64;
+import org.springframework.web.client.RestClientException;
 
 /**
  * 
@@ -173,6 +174,15 @@ public class RestClientUtil {
 			throw new SSICoreException(ex);
 		}
 		return restResponse;
+	}
+
+	public static void main(String[] a) {
+		RESTResponse response = RestClientUtil.callServicePost("http://localhost:8081/product/search",
+				"{\"hierarchyIds\":[\"T03-210913\"],\"superSeasons\":[],\"page\":0,\"size\":20}",
+				null,
+				null);
+
+		System.out.println(response.getResult());
 	}
 
 }
