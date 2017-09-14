@@ -1,5 +1,6 @@
 package com.mns.ssi.initial.planning.service.impl;
 
+import com.mns.ssi.initial.planning.exception.ProductDefaultsNotFoundException;
 import com.mns.ssi.initial.planning.exception.ProductDefaultsServiceException;
 import com.mns.ssi.initial.planning.model.*;
 import com.mns.ssi.initial.planning.exception.ProductsServiceException;
@@ -16,6 +17,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.mns.ssi.initial.planning.model.Criteria.Attribute.*;
+import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 
 @Service
@@ -47,8 +50,13 @@ public class ProductsServiceImpl implements ProductsService {
     }
 
     @Override
-    public List<Product> getProductsById(List<String> hierarchyIds, int pageIndex, int pageSize) {
+    public List<Product> getProductsByIds(List<String> hierarchyIds, int pageIndex, int pageSize) {
         return findProducts(hierarchyIds, emptyList(), pageIndex, pageSize);
+    }
+
+    @Override
+    public List<Product> getProductsById(String hierarchyId, int pageIndex, int pageSize) {
+        return findProducts(hierarchyId, pageIndex, pageSize);
     }
 
     private List<Product> findProducts(List<String> hierarchyIds, List<String> seasons,
@@ -83,8 +91,39 @@ public class ProductsServiceImpl implements ProductsService {
                     .collect(Collectors.toList());
 
             return products;
-        } catch(Exception anyError) {
+        } catch (Exception anyError) {
             throw new ProductDefaultsServiceException("Error while retrieving products", anyError);
+        }
+    }
+
+    private List<Product> findProducts(String hierarchyId, int pageIndex, int pageSize) {
+        try {
+            ProductHierarchy productHierarchy =
+                    productHierarchyService.getHierarchy(asList(hierarchyId));
+
+            Set<HierarchyNode> itemHierarchyNodes = ProductHierarchy.find(productHierarchy.getNodes(), Level.ITEM);
+
+            if(!itemHierarchyNodes.stream()
+                    .anyMatch(hierarchyNode -> hierarchyNode.getId().equals(hierarchyId))) {
+                throw new ProductDefaultsNotFoundException(
+                        format("Could not find id [%s| in the product hierarchy", hierarchyId));
+            }
+
+            List<ProductDetail> productDetails = productDetailsService.getProducts(hierarchyId, pageIndex, pageSize);
+            List<Product> products = productDetails.stream()
+                    .map(productDetail -> Product.builder()
+                            .hierarchyId(productDetail.getHierarchyId())
+                            .articleNumber(productDetail.getArticleNumber())
+                            .lineDescription(productDetail.getHierarchyId(),
+                                    productDetail.getStrokeNumber(),
+                                    productDetail.getLongDescription(),
+                                    productDetail.getColour())
+                            .build())
+                    .collect(Collectors.toList());
+
+            return products;
+        } catch (Exception anyError) {
+            throw new ProductsServiceException("Error while retrieving products", anyError);
         }
 
     }

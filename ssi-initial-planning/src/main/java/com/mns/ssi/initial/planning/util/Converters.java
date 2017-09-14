@@ -88,6 +88,7 @@ public final class Converters {
                 .dcCover(toInteger(defaultsNode.getDcCover()))
                 .breakingStock(toInteger(defaultsNode.getBreakingStock()))
                 .eire(toInteger(defaultsNode.getEire()))
+                .level(defaultsNode.getLevel())
                 .build();
     }
 

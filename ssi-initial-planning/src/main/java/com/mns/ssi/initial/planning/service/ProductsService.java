@@ -6,5 +6,6 @@ import java.util.List;
 
 public interface ProductsService {
     List<Product> getProductsBySeason(List<String> hierarchyIds, List<String> seasons, int pageIndex, int pageSize);
-    List<Product> getProductsById(List<String> hierarchyIds, int pageIndex, int pageSize);
+    List<Product> getProductsByIds(List<String> hierarchyIds, int pageIndex, int pageSize);
+    List<Product> getProductsById(String hierarchyId, int pageIndex, int pageSize);
 }

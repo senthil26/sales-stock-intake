@@ -13,14 +13,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
-import javax.transaction.Transactional;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static com.mns.ssi.initial.planning.util.Converters.toDefaultsHierarchy;
-import static com.mns.ssi.initial.planning.util.Converters.toInteger;
 import static java.util.stream.Collectors.groupingBy;
 
 @Service
@@ -45,13 +43,32 @@ public class ProductDefaultsServiceImpl implements ProductDefaultsService {
     public DefaultsHierarchy getHierarchyDefaults(List<String> hierarchyIds, int pageIndex, int pageSize) {
         Assert.notEmpty(hierarchyIds, "Empty Hierarchy Ids!");
 
-        List<DefaultParameter> defaultParameters = parameterRepository.findByHierarchyIdIn(hierarchyIds,
+        ProductHierarchy productHierarchy = productHierarchyService.getParentHierarchy(hierarchyIds, Level.DEPARTMENT);
+        Set<HierarchyNode> nodesAtDepartment = ProductHierarchy
+                .find(productHierarchy.getNodes(), Level.DEPARTMENT);
+        Set<HierarchyNode> nodesAtSubDepartment = ProductHierarchy.
+                find(productHierarchy.getNodes(), Level.SUB_DEPARTMENT);
+        Set<HierarchyNode> nodesAtRange = ProductHierarchy.
+                find(productHierarchy.getNodes(), Level.RANGE);
+        Set<HierarchyNode> nodesAtItem = ProductHierarchy.
+                find(productHierarchy.getNodes(), Level.ITEM);
+
+        List<HierarchyNode> hierarchyNodes = new ArrayList<>();
+        hierarchyNodes.addAll(nodesAtDepartment);
+        hierarchyNodes.addAll(nodesAtSubDepartment);
+        hierarchyNodes.addAll(nodesAtRange);
+        hierarchyNodes.addAll(nodesAtItem);
+
+        List<String> matchedHierarchyIds = hierarchyNodes.stream()
+                .map(h -> h.getId())
+                .collect(Collectors.toList());
+
+        List<DefaultParameter> defaultParameters = parameterRepository.findByHierarchyIdIn(matchedHierarchyIds,
                 new PageRequest(pageIndex, pageSize));
 
         Map<String, DefaultParameter> parametersById = defaultParameters.stream()
                 .collect(Collectors.toMap(DefaultParameter::getHierarchyId, Function.identity()));
 
-        ProductHierarchy productHierarchy = productHierarchyService.getParentHierarchy(hierarchyIds, Level.DEPARTMENT);
         DefaultsHierarchy defaultsHierarchy = toDefaultsHierarchy(productHierarchy, parametersById);
 
         return defaultsHierarchy.section(DEPARTMENT_HEAD, DEEPEST_DEPTH);
@@ -60,7 +77,7 @@ public class ProductDefaultsServiceImpl implements ProductDefaultsService {
     @Override
     public List<DefaultsNode> getStrokeColourDefaults(List<String> hierarchyIds, int pageIndex, int pageSize) {
         try {
-            List<Product> products = productsService.getProductsById(hierarchyIds, pageIndex, pageSize);
+            List<Product> products = productsService.getProductsByIds(hierarchyIds, pageIndex, pageSize);
             Map<String, List<Product>> productsByHierarchyId = products.stream()
                     .collect(groupingBy(Product::getHierarchyId));
 
@@ -102,18 +119,83 @@ public class ProductDefaultsServiceImpl implements ProductDefaultsService {
     }
 
     @Override
+    public List<DefaultsNode> getStrokeColourDefaults(String hierarchyId, int pageIndex, int pageSize) {
+        try {
+            List<Product> products = productsService.getProductsById(hierarchyId, pageIndex, pageSize);
+
+            // Enrich with article number and line description
+            List<DefaultsNode> defaultsNodes = products.stream()
+                    .filter(p -> p != null)
+                    .map(p -> DefaultsNode.builder()
+                            .id(p.getArticleNumber())
+                            .value(p.getLineDescription())
+                            .build())
+                    .collect(Collectors.toList());
+
+            // Query and collect
+            List<String> articleNumbers = defaultsNodes.stream()
+                    .map(n -> n.getId())
+                    .collect(Collectors.toList());
+
+            List<DefaultParameter> defaultParameters = parameterRepository.findByHierarchyIdIn(articleNumbers,
+                    new PageRequest(pageIndex, pageSize));
+
+            Map<String, DefaultParameter> parametersById = defaultParameters.stream()
+                    .collect(Collectors.toMap(DefaultParameter::getHierarchyId, Function.identity()));
+
+            // Enrich nodes
+            List<DefaultsNode> enrichedNodes = defaultsNodes.stream()
+                    .map(enrichDefaults(parametersById))
+                    .filter(n -> n.isPresent())
+                    .map(n -> n.get())
+                    .collect(Collectors.toList());
+
+            return enrichedNodes;
+        } catch (Exception anyError) {
+            throw new ProductDefaultsServiceException(anyError.getMessage(), anyError);
+        }
+    }
+
+    @Override
     public List<DefaultsNode> editDefaults(List<DefaultsNode> defaults) {
         try {
-            List<DefaultParameter> defaultParameters = defaults.stream()
+            Set<DefaultParameter> defaultParameters = defaults.stream()
                     .map(Converters::toDefaultParameter)
+                    .collect(Collectors.toSet());
+            Map<String, DefaultParameter> defaultParametersById = defaultParameters.stream()
+                    .collect(Collectors.toMap(DefaultParameter::getHierarchyId, Function.identity()));
+
+
+            Set<String> hierarchyIds = defaults.stream()
+                    .map(n -> n.getId())
+                    .collect(Collectors.toSet());
+
+            Iterable<DefaultParameter> matchedParameters = parameterRepository.findByHierarchyIdIn(hierarchyIds);
+            List<DefaultParameter> parametersToUpdate = StreamSupport
+                    .stream(matchedParameters.spliterator(), false)
+                    .filter(p -> defaultParametersById.get(p.getHierarchyId()) != null)
+                    .map(p -> DefaultParameter.builder()
+                            .id(p.getId())
+                            .hierarchyId(p.getHierarchyId())
+                            .dcCover(defaultParametersById.get(p.getHierarchyId()).getDcCover())
+                            .breakingStock(defaultParametersById.get(p.getHierarchyId()).getBreakingStock())
+                            .eire(defaultParametersById.get(p.getHierarchyId()).getEire())
+                            .build())
+                    .collect(Collectors.toList());
+            parameterRepository.save(parametersToUpdate);
+
+            Map<String, DefaultParameter> parametersById =
+                    StreamSupport
+                            .stream(matchedParameters.spliterator(), false)
+                            .collect(Collectors.toMap(DefaultParameter::getHierarchyId, Function.identity()));
+
+            List<DefaultParameter> parametersToInsert = defaultParameters.stream()
+                    .filter(d -> parametersById.get(d.getHierarchyId()) == null)
                     .collect(Collectors.toList());
 
-            Iterable<DefaultParameter> updatedDefaultParameters = parameterRepository.save(defaultParameters);
-            return StreamSupport
-                    .stream(updatedDefaultParameters.spliterator(), false)
-                    .map(Converters::toDefaultsNode)
-                    .collect(Collectors.toList());
+            parameterRepository.save(parametersToInsert);
 
+            return Collections.emptyList();
         } catch (Exception anyError) {
             throw new ProductDefaultsServiceException("Error while updating defaults", anyError);
         }

@@ -128,5 +128,7 @@ hs_err_pid*
 mvnw.cmd
 
 # jetbrains
-.idea
+.idea/compiler.xml
+.idea/dataSources.xml
+.idea/modules.xml
 sales-stock-intake.iml

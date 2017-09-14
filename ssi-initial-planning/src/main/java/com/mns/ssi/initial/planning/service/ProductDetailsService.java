@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface ProductDetailsService {
     List<ProductDetail> getProducts(Criteria criteria);
+    List<ProductDetail> getProducts(String hierarchyId, int page, int size);
 }

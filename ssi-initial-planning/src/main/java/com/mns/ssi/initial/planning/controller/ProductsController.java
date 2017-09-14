@@ -31,6 +31,12 @@ public class ProductsController {
                 hierarchySeason.getSize());
     }
 
+    @RequestMapping(value = "/{hierarchyId}/{page}/{size}", method = RequestMethod.GET)
+    public List<Product> products(@PathVariable String hierarchyId, int page, int size) {
+        return productsService.getProductsById(hierarchyId, page, size);
+    }
+
+
     @ExceptionHandler(ProductsServiceException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ProductsServiceError hierarchyError(ProductsServiceException hierarchyError)

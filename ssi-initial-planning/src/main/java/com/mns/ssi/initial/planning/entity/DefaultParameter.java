@@ -1,5 +1,6 @@
 package com.mns.ssi.initial.planning.entity;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -16,7 +17,7 @@ public final class DefaultParameter  {
     @Column(name = "Id")
     private Long id;
 
-    @Column(name = "HierarchyId")
+    @Column(name = "HierarchyId", unique = true, nullable = false)
     private String hierarchyId;
 
     @Column(name = "DcCover")
@@ -34,6 +35,7 @@ public final class DefaultParameter  {
     DefaultParameter() {}
 
     private DefaultParameter(Builder builder) {
+        this.id = builder.id;
         this.hierarchyId = builder.hierarchyId;
         this.dcCover = builder.dcCover;
         this.breakingStock = builder.breakingStock;
@@ -42,11 +44,17 @@ public final class DefaultParameter  {
     }
 
     public static class Builder {
+        private Long id;
         private String hierarchyId;
         private Integer dcCover;
         private Integer breakingStock;
         private Integer eire;
         private String level;
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
 
         public Builder hierarchyId(String hierarchyId) {
             this.hierarchyId = hierarchyId;
@@ -117,7 +125,9 @@ public final class DefaultParameter  {
         }
 
         DefaultParameter flatProduct = (DefaultParameter) o;
-        return reflectionEquals(this, flatProduct);
+        return new EqualsBuilder()
+                .append(this.id, flatProduct.getId())
+                .build();
     }
 
     @Override

@@ -9,5 +9,6 @@ import java.util.List;
 public interface ProductDefaultsService {
     DefaultsHierarchy getHierarchyDefaults(List<String> hierarchyIds, int pageIndex, int pageSize);
     List<DefaultsNode> getStrokeColourDefaults(List<String> hierarchyIds, int pageIndex, int pageSize);
+    List<DefaultsNode> getStrokeColourDefaults(String hierarchyIds, int pageIndex, int pageSize);
     List<DefaultsNode> editDefaults(List<DefaultsNode> defaults);
 }
