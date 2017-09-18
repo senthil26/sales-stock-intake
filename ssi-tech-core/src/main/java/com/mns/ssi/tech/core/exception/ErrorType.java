@@ -6,8 +6,8 @@ package com.mns.ssi.tech.core.exception;
  */
 public enum ErrorType {
 	ERROR("ERROR"),
-	INFORMATIVO("INFORMATIVO"),
-	VALIDACION("VALIDACION");
+	INFORMATION("INFORMATION"),
+	VALIDATION("VALIDATION");
 	
 	String value;
 	
