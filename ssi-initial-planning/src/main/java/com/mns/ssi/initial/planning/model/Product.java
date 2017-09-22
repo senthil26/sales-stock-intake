@@ -59,14 +59,11 @@ public class Product {
             return new Product(this);
         }
 
-        private String getDepartment(String hierarchyId) {
-            StringTokenizer tokenizer = new StringTokenizer(hierarchyId, DASH);
-            if(tokenizer.hasMoreTokens()) {
-                return tokenizer.nextToken();
-            }
-
-            return EMPTY;
-        }
+     private String getDepartment(String hierarchyId) {
+    	hierarchyId=hierarchyId.substring(hierarchyId.indexOf(DASH)+1);
+    	hierarchyId=hierarchyId.substring(0,3);
+	
+      return EMPTY;
     }
 
     public static Builder builder() {
