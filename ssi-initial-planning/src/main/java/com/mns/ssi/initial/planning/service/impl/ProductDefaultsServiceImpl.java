@@ -25,6 +25,7 @@ import static java.util.stream.Collectors.groupingBy;
 public class ProductDefaultsServiceImpl implements ProductDefaultsService {
     private static final String DEPARTMENT_HEAD = "DEPARTMENT_HEAD";
     private static final int DEEPEST_DEPTH = 4;
+    private static final String DASH = "-";
 
     private final DefaultsParameterRepository parameterRepository;
     private final ProductHierarchyService<String> productHierarchyService;
@@ -216,8 +217,21 @@ public class ProductDefaultsServiceImpl implements ProductDefaultsService {
 
                 return Optional.of(defaults);
             }
+            else{
+            	 {
+                     DefaultsNode defaults = DefaultsNode.builder()
+                             .id(n.getId())
+                             .value(n.getValue())
+                             .dcCover(DASH)
+                             .breakingStock(DASH)
+                             .eire(DASH)
+                             .build();
 
-            return Optional.empty();
+                     return Optional.of(defaults);
+                 }
+            }
+
+           // return Optional.empty();
         };
     }
 }
