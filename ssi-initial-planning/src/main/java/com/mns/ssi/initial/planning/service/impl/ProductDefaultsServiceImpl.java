@@ -172,9 +172,36 @@ public class ProductDefaultsServiceImpl implements ProductDefaultsService {
                     .collect(Collectors.toSet());
 
             Iterable<DefaultParameter> matchedParameters = parameterRepository.findByHierarchyIdIn(hierarchyIds);
+            
+            //if hierarchyid  present in sql table 
             List<DefaultParameter> parametersToUpdate = StreamSupport
                     .stream(matchedParameters.spliterator(), false)
-                    .filter(p -> defaultParametersById.get(p.getHierarchyId()) != null)
+                    .filter(p -> defaultParametersById.get(p.getHierarchyId()) != null &&  !((defaultParametersById.get(p.getHierarchyId()).getBreakingStock()==null )&&(defaultParametersById.get(p.getHierarchyId()).getEire()==null)&&(defaultParametersById.get(p.getHierarchyId()).getDcCover()==null)))
+                      .map(p -> DefaultParameter.builder()
+                            .id(p.getId())
+                            .hierarchyId(p.getHierarchyId())
+                            .dcCover(defaultParametersById.get(p.getHierarchyId()).getDcCover())
+                            .breakingStock(defaultParametersById.get(p.getHierarchyId()).getBreakingStock())
+                            .eire(defaultParametersById.get(p.getHierarchyId()).getEire())
+                            .build())
+                    .collect(Collectors.toList());
+            
+            parameterRepository.save(parametersToUpdate);
+          //if hierarchyid  is not present in sql table new record insertion
+            Map<String, DefaultParameter> parametersById =
+                    StreamSupport
+                            .stream(matchedParameters.spliterator(), false)
+                            .collect(Collectors.toMap(DefaultParameter::getHierarchyId, Function.identity()));
+
+            List<DefaultParameter> parametersToInsert = defaultParameters.stream()
+                    .filter(d -> parametersById.get(d.getHierarchyId()) == null  &&  !((defaultParametersById.get(d.getHierarchyId()).getBreakingStock()==null )&&(defaultParametersById.get(d.getHierarchyId()).getEire()==null )&&(defaultParametersById.get(d.getHierarchyId()).getDcCover()==null)))
+                    .collect(Collectors.toList());
+
+            parameterRepository.save(parametersToInsert);
+            //if hierarchyid  present in sql table and all defaultvalues are null
+            List<DefaultParameter> parametersToDelete = StreamSupport
+                    .stream(matchedParameters.spliterator(), false)
+                    .filter(p -> defaultParametersById.get(p.getHierarchyId()) != null &&  ((defaultParametersById.get(p.getHierarchyId()).getBreakingStock() == null )&&(defaultParametersById.get(p.getHierarchyId()).getEire()==null)&&(defaultParametersById.get(p.getHierarchyId()).getDcCover()==null)))
                     .map(p -> DefaultParameter.builder()
                             .id(p.getId())
                             .hierarchyId(p.getHierarchyId())
@@ -183,19 +210,7 @@ public class ProductDefaultsServiceImpl implements ProductDefaultsService {
                             .eire(defaultParametersById.get(p.getHierarchyId()).getEire())
                             .build())
                     .collect(Collectors.toList());
-            parameterRepository.save(parametersToUpdate);
-
-            Map<String, DefaultParameter> parametersById =
-                    StreamSupport
-                            .stream(matchedParameters.spliterator(), false)
-                            .collect(Collectors.toMap(DefaultParameter::getHierarchyId, Function.identity()));
-
-            List<DefaultParameter> parametersToInsert = defaultParameters.stream()
-                    .filter(d -> parametersById.get(d.getHierarchyId()) == null)
-                    .collect(Collectors.toList());
-
-            parameterRepository.save(parametersToInsert);
-
+            parameterRepository.delete(parametersToDelete);
             return Collections.emptyList();
         } catch (Exception anyError) {
             throw new ProductDefaultsServiceException("Error while updating defaults", anyError);
@@ -216,10 +231,8 @@ public class ProductDefaultsServiceImpl implements ProductDefaultsService {
                         .build();
 
                 return Optional.of(defaults);
-            }
-            else{
-            	 {
-                     DefaultsNode defaults = DefaultsNode.builder()
+            }else{
+            	     DefaultsNode defaults = DefaultsNode.builder()
                              .id(n.getId())
                              .value(n.getValue())
                              .dcCover(DASH)
@@ -229,7 +242,7 @@ public class ProductDefaultsServiceImpl implements ProductDefaultsService {
 
                      return Optional.of(defaults);
                  }
-            }
+            
 
            // return Optional.empty();
         };
